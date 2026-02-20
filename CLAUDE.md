@@ -1,6 +1,6 @@
-# BRISS - BRight Snippet Sire
+# Developer Guide
 
-PDF cropping tool with auto-crop detection. Forked to add batch processing.
+See [README.md](README.md) for user-facing docs and usage instructions.
 
 ## Project Structure
 
@@ -24,11 +24,19 @@ PDF cropping tool with auto-crop detection. Forked to add batch processing.
 
 ### Crop Pipeline
 
-`ClusterCreator.clusterPages()` → `ClusterRenderWorker` → `CropFinder.getAutoCropFloats()` → `CropDefinition.createCropDefinition()` → `DocumentCropper.crop()`
+```
+ClusterCreator.clusterPages()
+  → ClusterRenderWorker (renders pages to images via JPedal)
+  → CropFinder.getAutoCropFloats() (edge detection on merged preview)
+  → CropDefinition.createCropDefinition() (maps pages to crop ratios)
+  → DocumentCropper.crop() (applies crop boxes via iText)
+```
 
-## Dependencies (custom local installs required)
+## Building from Source
 
-These are not in Maven Central and must be installed to your local repo before building:
+### 1. Install custom dependencies
+
+These jars are not in Maven Central. Install them from the pre-built distribution (`~/Desktop/briss-0.9/` or from the release zip):
 
 ```bash
 mvn install:install-file -DgroupId=jpedal -DartifactId=jpedal -Dpackaging=jar -Dversion=4.74b27 -Dfile=jpedal-4.74b27.jar
@@ -37,9 +45,7 @@ mvn install:install-file -DgroupId=jai -DartifactId=jai-core -Dpackaging=jar -Dv
 mvn install:install-file -DgroupId=jai -DartifactId=jai-codec -Dpackaging=jar -Dversion=1.0 -Dfile=jai-codec-1.0.jar
 ```
 
-The original jar files can be found in the pre-built distribution at `~/Desktop/briss-0.9/`.
-
-## Build
+### 2. Build
 
 ```bash
 mvn clean package
@@ -49,29 +55,17 @@ Produces:
 - `target/briss-0.9.jar` — main jar (needs dependency jars on classpath)
 - `target/briss-0.9-dist.zip` — distributable zip with all jars + docs
 
-## Usage
+### 3. Test
 
 ```bash
-# GUI mode
-java -jar briss-0.9.jar
-
-# Single file auto-crop
-java -jar briss-0.9.jar -s input.pdf [-d output.pdf]
-
-# Batch folder auto-crop (recursive)
-java -jar briss-0.9.jar -f /path/to/folder [-f /path/to/folder2]
+# From inside the extracted dist zip:
+java -jar briss-0.9.jar                    # GUI
+java -jar briss-0.9.jar -s test.pdf        # single file
+java -jar briss-0.9.jar -f ./test-folder   # batch
 ```
 
-### Batch behavior
-- Recursively finds all `.pdf` files (skips `_backup.pdf` and `_cropped.pdf`)
-- Auto-crops each using the same pipeline as single-file mode
-- Renames original to `_backup.pdf`, saves cropped with original filename
-- Skips files that already have a `_backup.pdf` (idempotent)
+## Important Build Notes
 
-### GUI batch
-`File > Batch Crop Folder` (shortcut: B) — same behavior via folder chooser dialog.
-
-## Important Notes
-
-- Do NOT use `maven-shade-plugin` (fat jar) — JAI native image codecs break when bundled. The distribution must keep dependency jars separate.
-- The `.exe` wrapper in the original distribution was created with Launch4j (not reproduced in this build).
+- Do NOT use `maven-shade-plugin` (fat jar) — JAI native image codecs register via `META-INF/services` and break when bundled into a single jar. The distribution must keep dependency jars separate.
+- The `.exe` wrapper in the original upstream distribution was created with Launch4j (not reproduced in this build).
+- Dependencies use default (compile) scope, not runtime — the source code directly imports iText and JPedal classes.
