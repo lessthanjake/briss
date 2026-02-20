@@ -27,11 +27,23 @@ public final class Briss {
         // this needs to be set in order to cope with jp2000 images
         System.setProperty("org.jpedal.jai", "true");
 
-        // check if args are present, if so try to start commandline briss
-        if (args.length > 1) {
+        if (hasFlag(args, "-f")) {
+            // batch mode: recursively process folders
+            BrissBatch.batchCrop(args);
+        } else if (args.length > 1) {
+            // single-file command-line mode
             BrissCMD.autoCrop(args);
         } else {
             new BrissGUI(args);
         }
+    }
+
+    private static boolean hasFlag(final String[] args, final String flag) {
+        for (String arg : args) {
+            if (arg.trim().equalsIgnoreCase(flag)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

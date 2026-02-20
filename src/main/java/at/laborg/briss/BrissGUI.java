@@ -93,6 +93,7 @@ public class BrissGUI extends JFrame implements ActionListener,
     private static final String SET_SIZE_DESCRIPTION = "Enter size in milimeters (width height)";
     private static final String SET_POSITION_DESCRIPTION = "Enter position in milimeters (x y)";
     private static final String LOAD = "Load File";
+    private static final String LOAD_FOLDER = "Batch Crop Folder";
     private static final String CROP = "Crop PDF";
     private static final String EXIT = "Exit";
     private static final String MAXIMIZE_WIDTH = "Maximize to width";
@@ -117,7 +118,7 @@ public class BrissGUI extends JFrame implements ActionListener,
     private JMenuBar menuBar;
     private JPanel previewPanel;
     private JProgressBar progressBar;
-    private JMenuItem loadButton, cropButton, maximizeWidthButton,
+    private JMenuItem loadButton, loadFolderButton, cropButton, maximizeWidthButton,
             maximizeHeightButton, showPreviewButton, showHelpButton,
             openDonationLinkButton, excludePagesButton;
     private JMenuItem maximizeSizeButton, setSizeButton, setPositionButton,
@@ -182,6 +183,12 @@ public class BrissGUI extends JFrame implements ActionListener,
         loadButton.setEnabled(true);
         loadButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, 0));
         fileMenu.add(loadButton);
+
+        loadFolderButton = new JMenuItem(LOAD_FOLDER, KeyEvent.VK_B);
+        loadFolderButton.addActionListener(this);
+        loadFolderButton.setEnabled(true);
+        loadFolderButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, 0));
+        fileMenu.add(loadFolderButton);
 
         fileMenu.addSeparator();
 
@@ -445,6 +452,29 @@ public class BrissGUI extends JFrame implements ActionListener,
                         "Error occured while loading",
                         JOptionPane.ERROR_MESSAGE);
             }
+
+        } else if (action.getActionCommand().equals(LOAD_FOLDER)) {
+            File folder = chooseFolderForBatch();
+            if (folder == null)
+                return;
+            List<File> pdfFiles = new ArrayList<File>();
+            collectPdfFiles(folder, pdfFiles);
+            if (pdfFiles.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "No PDF files found in:\n" + folder.getAbsolutePath(),
+                        "No PDFs found", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Found " + pdfFiles.size() + " PDF(s) in:\n"
+                            + folder.getAbsolutePath()
+                            + "\n\nAuto-crop all files?\n"
+                            + "(Originals will be renamed to _backup.pdf)",
+                    "Confirm Batch Crop",
+                    JOptionPane.OK_CANCEL_OPTION);
+            if (confirm != JOptionPane.OK_OPTION)
+                return;
+            startBatchCropTask(pdfFiles);
 
         } else if (action.getActionCommand().equals(CROP)) {
             try {
@@ -867,6 +897,147 @@ public class BrissGUI extends JFrame implements ActionListener,
             }
 
             return null;
+        }
+    }
+
+    private File chooseFolderForBatch() {
+        JFileChooser fc = new JFileChooser(lastOpenDir);
+        fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        fc.setDialogTitle("Select folder to batch crop");
+        int retval = fc.showOpenDialog(this);
+        if (retval == JFileChooser.APPROVE_OPTION)
+            return fc.getSelectedFile();
+        return null;
+    }
+
+    private static final String BACKUP_SUFFIX = "_backup.pdf";
+    private static final String CROPPED_SUFFIX = "_cropped.pdf";
+
+    private void collectPdfFiles(File directory, List<File> result) {
+        File[] files = directory.listFiles();
+        if (files == null)
+            return;
+        for (File file : files) {
+            if (file.isDirectory()) {
+                collectPdfFiles(file, result);
+            } else if (file.getName().toLowerCase().endsWith(".pdf")
+                    && !file.getName().toLowerCase().endsWith(BACKUP_SUFFIX)
+                    && !file.getName().toLowerCase().endsWith(CROPPED_SUFFIX)) {
+                result.add(file);
+            }
+        }
+    }
+
+    private static File getBackupFile(File sourceFile) {
+        String origName = sourceFile.getAbsolutePath();
+        String backupName = origName.substring(0, origName.length() - 4)
+                + BACKUP_SUFFIX;
+        return new File(backupName);
+    }
+
+    private void startBatchCropTask(final List<File> pdfFiles) {
+        loadFolderButton.setEnabled(false);
+        loadButton.setEnabled(false);
+        cropButton.setEnabled(false);
+        setWorkingState("Batch cropping...");
+
+        BatchCropTask task = new BatchCropTask(pdfFiles);
+        task.addPropertyChangeListener(this);
+        task.execute();
+    }
+
+    private class BatchCropTask extends SwingWorker<Void, Void> {
+
+        private final List<File> pdfFiles;
+        private int processed = 0;
+        private int skipped = 0;
+        private int failed = 0;
+        private final List<String> errors = new ArrayList<String>();
+
+        public BatchCropTask(List<File> pdfFiles) {
+            super();
+            this.pdfFiles = pdfFiles;
+        }
+
+        @Override
+        protected Void doInBackground() {
+            for (int i = 0; i < pdfFiles.size(); i++) {
+                File pdfFile = pdfFiles.get(i);
+                int percent = (int) ((i / (float) pdfFiles.size()) * 100);
+                setProgress(percent);
+                progressBar.setString("[" + (i + 1) + "/" + pdfFiles.size()
+                        + "] " + pdfFile.getName());
+
+                File backupFile = getBackupFile(pdfFile);
+                if (backupFile.exists()) {
+                    skipped++;
+                    continue;
+                }
+
+                File croppedFile = BrissFileHandling
+                        .getRecommendedDestination(pdfFile);
+                try {
+                    BrissCMD.autoCropFile(pdfFile, croppedFile);
+
+                    if (!croppedFile.exists()) {
+                        errors.add(pdfFile.getName()
+                                + ": cropped file was not created");
+                        failed++;
+                        continue;
+                    }
+
+                    if (!pdfFile.renameTo(backupFile)) {
+                        errors.add(pdfFile.getName()
+                                + ": could not rename original to backup");
+                        croppedFile.delete();
+                        failed++;
+                        continue;
+                    }
+
+                    if (!croppedFile.renameTo(pdfFile)) {
+                        errors.add(pdfFile.getName()
+                                + ": could not rename cropped to original");
+                        backupFile.renameTo(pdfFile);
+                        croppedFile.delete();
+                        failed++;
+                        continue;
+                    }
+
+                    processed++;
+                } catch (Exception e) {
+                    errors.add(pdfFile.getName() + ": " + e.getMessage());
+                    if (croppedFile.exists()) {
+                        croppedFile.delete();
+                    }
+                    failed++;
+                }
+            }
+            setProgress(100);
+            return null;
+        }
+
+        @Override
+        protected void done() {
+            loadFolderButton.setEnabled(true);
+            loadButton.setEnabled(true);
+            setIdleState("Batch complete");
+
+            StringBuilder msg = new StringBuilder();
+            msg.append("Batch processing complete.\n\n");
+            msg.append("Total files: ").append(pdfFiles.size()).append("\n");
+            msg.append("Cropped: ").append(processed).append("\n");
+            msg.append("Skipped (already processed): ").append(skipped)
+                    .append("\n");
+            msg.append("Failed: ").append(failed).append("\n");
+            if (!errors.isEmpty()) {
+                msg.append("\nErrors:\n");
+                for (String err : errors) {
+                    msg.append("  - ").append(err).append("\n");
+                }
+            }
+
+            JOptionPane.showMessageDialog(BrissGUI.this, msg.toString(),
+                    "Batch Crop Results", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 

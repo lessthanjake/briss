@@ -45,22 +45,39 @@ public final class BrissCMD {
         if (!CommandValues.isValidJob(workDescription))
             return;
 
-        System.out
-                .println("Clustering PDF: " + workDescription.getSourceFile());
-        ClusterDefinition clusterDefinition = null;
         try {
-            clusterDefinition = ClusterCreator.clusterPages(
-                    workDescription.getSourceFile(), null);
-        } catch (IOException e1) {
-            System.out.println("Error occured while clustering.");
-            e1.printStackTrace(System.out);
-            return;
+            autoCropFile(workDescription.getSourceFile(),
+                    workDescription.getDestFile());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (DocumentException e) {
+            e.printStackTrace();
+        } catch (CropException e) {
+            System.out.println("Error while cropping: " + e.getMessage());
         }
+    }
+
+    /**
+     * Auto-crops a single PDF file. This is the core pipeline used by both
+     * single-file command-line mode and batch mode.
+     *
+     * @param sourceFile the source PDF to crop
+     * @param destFile   the destination file for the cropped PDF
+     * @throws IOException          if an I/O error occurs
+     * @throws DocumentException    if a PDF processing error occurs
+     * @throws CropException        if the PDF is encrypted or cannot be cropped
+     */
+    public static void autoCropFile(final File sourceFile, final File destFile)
+            throws IOException, DocumentException, CropException {
+
+        System.out.println("Clustering PDF: " + sourceFile);
+        ClusterDefinition clusterDefinition = ClusterCreator.clusterPages(
+                sourceFile, null);
         System.out.println("Created "
                 + clusterDefinition.getClusterList().size() + " clusters.");
 
         ClusterRenderWorker cRW = new ClusterRenderWorker(
-                workDescription.getSourceFile(), clusterDefinition);
+                sourceFile, clusterDefinition);
         cRW.start();
 
         System.out.print("Starting to render clusters.");
@@ -73,28 +90,18 @@ public final class BrissCMD {
         }
         System.out.println("finished!");
         System.out.println("Calculating crop rectangles.");
-        try {
-            for (PageCluster cluster : clusterDefinition.getClusterList()) {
-                Float[] auto = CropFinder.getAutoCropFloats(cluster
-                        .getImageData().getPreviewImage());
-                cluster.addRatios(auto);
-            }
-            CropDefinition cropDefintion = CropDefinition.createCropDefinition(
-                    workDescription.getSourceFile(),
-                    workDescription.getDestFile(), clusterDefinition);
-            System.out.println("Starting to crop files.");
-            DocumentCropper.crop(cropDefintion);
-            System.out.println("Cropping succesful. Cropped to:"
-                    + workDescription.getDestFile().getAbsolutePath());
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (DocumentException e) {
-            e.printStackTrace();
-        } catch (CropException e) {
-            System.out.println("Error while cropping:" + e.getMessage());
+
+        for (PageCluster cluster : clusterDefinition.getClusterList()) {
+            Float[] auto = CropFinder.getAutoCropFloats(cluster
+                    .getImageData().getPreviewImage());
+            cluster.addRatios(auto);
         }
+        CropDefinition cropDefintion = CropDefinition.createCropDefinition(
+                sourceFile, destFile, clusterDefinition);
+        System.out.println("Starting to crop files.");
+        DocumentCropper.crop(cropDefintion);
+        System.out.println("Cropping succesful. Cropped to:"
+                + destFile.getAbsolutePath());
     }
 
     private static class CommandValues {
