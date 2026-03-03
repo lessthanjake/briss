@@ -30,20 +30,20 @@ import java.util.StringTokenizer;
 import at.laborg.briss.exception.CropException;
 import at.laborg.briss.model.CropDefinition;
 
-import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Rectangle;
-import com.itextpdf.text.pdf.PdfArray;
-import com.itextpdf.text.pdf.PdfDestination;
-import com.itextpdf.text.pdf.PdfDictionary;
-import com.itextpdf.text.pdf.PdfImportedPage;
-import com.itextpdf.text.pdf.PdfName;
-import com.itextpdf.text.pdf.PdfNumber;
-import com.itextpdf.text.pdf.PdfReader;
-import com.itextpdf.text.pdf.PdfSmartCopy;
-import com.itextpdf.text.pdf.PdfStamper;
-import com.itextpdf.text.pdf.SimpleBookmark;
-import com.itextpdf.text.pdf.SimpleNamedDestination;
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfArray;
+import com.lowagie.text.pdf.PdfDestination;
+import com.lowagie.text.pdf.PdfDictionary;
+import com.lowagie.text.pdf.PdfImportedPage;
+import com.lowagie.text.pdf.PdfName;
+import com.lowagie.text.pdf.PdfNumber;
+import com.lowagie.text.pdf.PdfReader;
+import com.lowagie.text.pdf.PdfSmartCopy;
+import com.lowagie.text.pdf.PdfStamper;
+import com.lowagie.text.pdf.SimpleBookmark;
+import com.lowagie.text.pdf.SimpleNamedDestination;
 
 public final class DocumentCropper {
 
@@ -71,7 +71,11 @@ public final class DocumentCropper {
                 pdfMetaInformation);
 
         // now crop all pages according to their ratios
-        cropMultipliedFile(cropDefinition, intermediatePdf, pdfMetaInformation);
+        try {
+            cropMultipliedFile(cropDefinition, intermediatePdf, pdfMetaInformation);
+        } finally {
+            intermediatePdf.delete();
+        }
         return cropDefinition.getDestinationFile();
     }
 
@@ -82,11 +86,17 @@ public final class DocumentCropper {
 
         PdfReader reader = new PdfReader(cropDefinition.getSourceFile()
                 .getAbsolutePath());
-        HashMap<String, String> map = SimpleNamedDestination
+        @SuppressWarnings("unchecked")
+        HashMap<Object, Object> rawMap = SimpleNamedDestination
                 .getNamedDestination(reader, false);
+        HashMap<String, String> map = new HashMap<String, String>();
+        for (Map.Entry<Object, Object> entry : rawMap.entrySet()) {
+            map.put(String.valueOf(entry.getKey()), String.valueOf(entry.getValue()));
+        }
         Document document = new Document();
 
         File resultFile = File.createTempFile("cropped", ".pdf");
+        resultFile.deleteOnExit();
         PdfSmartCopy pdfCopy = new PdfSmartCopy(document, new FileOutputStream(
                 resultFile));
         document.open();
@@ -145,7 +155,7 @@ public final class DocumentCropper {
 
         PdfStamper stamper = new PdfStamper(reader, new FileOutputStream(
                 cropDefinition.getDestinationFile()));
-        stamper.setMoreInfo(pdfMetaInformation.getSourceMetaInfo());
+        stamper.setInfoDictionary(pdfMetaInformation.getSourceMetaInfo());
 
         PdfDictionary pageDict;
         int newPageNumber = 1;
@@ -185,7 +195,7 @@ public final class DocumentCropper {
             range[0] = newPageNumber - 1;
             range[1] = pdfMetaInformation.getSourcePageCount()
                     + (newPageNumber - sourcePageNumber);
-            SimpleBookmark.shiftPageNumbers(
+            SimpleBookmark.shiftPageNumbersInRange(
                     pdfMetaInformation.getSourceBookmarks(),
                     rectangleList.size() - 1, range);
         }
@@ -214,14 +224,14 @@ public final class DocumentCropper {
     private static class PdfMetaInformation {
 
         private final int sourcePageCount;
-        private final HashMap<String, String> sourceMetaInfo;
-        private final List<HashMap<String, Object>> sourceBookmarks;
+        private final Map<String, String> sourceMetaInfo;
+        private final List<Map<String, Object>> sourceBookmarks;
 
         public PdfMetaInformation(final File source) throws IOException {
             PdfReader reader = new PdfReader(source.getAbsolutePath());
             this.sourcePageCount = reader.getNumberOfPages();
             this.sourceMetaInfo = reader.getInfo();
-            this.sourceBookmarks = SimpleBookmark.getBookmark(reader);
+            this.sourceBookmarks = SimpleBookmark.getBookmarkList(reader);
             reader.close();
 
         }
@@ -230,11 +240,11 @@ public final class DocumentCropper {
             return sourcePageCount;
         }
 
-        public HashMap<String, String> getSourceMetaInfo() {
+        public Map<String, String> getSourceMetaInfo() {
             return sourceMetaInfo;
         }
 
-        public List<HashMap<String, Object>> getSourceBookmarks() {
+        public List<Map<String, Object>> getSourceBookmarks() {
             return sourceBookmarks;
         }
 

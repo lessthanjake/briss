@@ -2,7 +2,7 @@ package at.laborg.briss.utils;
 
 import java.util.List;
 
-import com.itextpdf.text.Rectangle;
+import com.lowagie.text.Rectangle;
 
 public final class RectangleHandler {
 

@@ -28,8 +28,8 @@ import at.laborg.briss.model.ClusterCollection;
 import at.laborg.briss.model.ClusterJob;
 import at.laborg.briss.model.SingleCluster;
 
-import com.itextpdf.text.Rectangle;
-import com.itextpdf.text.pdf.PdfReader;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfReader;
 
 public class ClusterManager {
 

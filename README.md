@@ -124,7 +124,6 @@ GPLv3 — see [LICENSE.txt](LICENSE.txt)
 
 ### Libraries
 
-- [iText](http://itextpdf.com/) (AGPLv3) — PDF writing/cropping
+- [OpenPDF](https://github.com/LibrePDF/OpenPDF) (LGPL/MPL) — PDF writing/cropping
 - [JPedal](http://www.jpedal.org/) (LGPL) — PDF rendering
 - [JAI](https://www.oracle.com/java/technologies/advanced-imaging-api.html) — Image processing
-- [BouncyCastle](https://www.bouncycastle.org/) — Cryptographic support

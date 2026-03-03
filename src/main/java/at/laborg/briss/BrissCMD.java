@@ -30,7 +30,7 @@ import at.laborg.briss.utils.ClusterCreator;
 import at.laborg.briss.utils.ClusterRenderWorker;
 import at.laborg.briss.utils.DocumentCropper;
 
-import com.itextpdf.text.DocumentException;
+import com.lowagie.text.DocumentException;
 
 public final class BrissCMD {
 

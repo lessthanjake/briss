@@ -28,18 +28,18 @@ import at.laborg.briss.model.ClusterJob;
 import at.laborg.briss.model.CropJob;
 import at.laborg.briss.model.SingleCluster;
 
-import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Rectangle;
-import com.itextpdf.text.pdf.PdfArray;
-import com.itextpdf.text.pdf.PdfDictionary;
-import com.itextpdf.text.pdf.PdfImportedPage;
-import com.itextpdf.text.pdf.PdfName;
-import com.itextpdf.text.pdf.PdfNumber;
-import com.itextpdf.text.pdf.PdfReader;
-import com.itextpdf.text.pdf.PdfSmartCopy;
-import com.itextpdf.text.pdf.PdfStamper;
-import com.itextpdf.text.pdf.SimpleBookmark;
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfArray;
+import com.lowagie.text.pdf.PdfDictionary;
+import com.lowagie.text.pdf.PdfImportedPage;
+import com.lowagie.text.pdf.PdfName;
+import com.lowagie.text.pdf.PdfNumber;
+import com.lowagie.text.pdf.PdfReader;
+import com.lowagie.text.pdf.PdfSmartCopy;
+import com.lowagie.text.pdf.PdfStamper;
+import com.lowagie.text.pdf.SimpleBookmark;
 
 public class CropManager {
 
@@ -49,7 +49,7 @@ public class CropManager {
         if (source != null && source.exists()) {
             PdfReader reader = new PdfReader(source.getAbsolutePath());
             CropJob result = new CropJob(source, reader.getNumberOfPages(),
-                    reader.getInfo(), SimpleBookmark.getBookmark(reader));
+                    reader.getInfo(), SimpleBookmark.getBookmarkList(reader));
             reader.close();
             result.setClusterCollection(curClusterJob.getClusterCollection());
             return result;
@@ -62,7 +62,7 @@ public class CropManager {
         if (source != null && source.exists()) {
             PdfReader reader = new PdfReader(source.getAbsolutePath());
             result = new CropJob(source, reader.getNumberOfPages(), reader
-                    .getInfo(), SimpleBookmark.getBookmark(reader));
+                    .getInfo(), SimpleBookmark.getBookmarkList(reader));
             reader.close();
             return result;
         }
@@ -76,7 +76,11 @@ public class CropManager {
         File multipliedTmpFile = copyToMultiplePages(cropJob);
 
         // now crop all pages according to their ratios
-        cropMultipliedFile(multipliedTmpFile, cropJob);
+        try {
+            cropMultipliedFile(multipliedTmpFile, cropJob);
+        } finally {
+            multipliedTmpFile.delete();
+        }
     }
 
     private static File copyToMultiplePages(CropJob cropJob)
@@ -86,6 +90,7 @@ public class CropManager {
         Document document = new Document();
 
         File resultFile = File.createTempFile("cropped", ".pdf");
+        resultFile.deleteOnExit();
         PdfSmartCopy pdfCopy = new PdfSmartCopy(document, new FileOutputStream(
                 resultFile));
         document.open();
@@ -112,7 +117,7 @@ public class CropManager {
         PdfReader reader = new PdfReader(source.getAbsolutePath());
         PdfStamper stamper = new PdfStamper(reader, new FileOutputStream(
                 cropJob.getDestinationFile()));
-        stamper.setMoreInfo(cropJob.getSourceMetaInfo());
+        stamper.setInfoDictionary(cropJob.getSourceMetaInfo());
 
         PdfDictionary pageDict;
         int newPageNumber = 1;
@@ -153,7 +158,7 @@ public class CropManager {
             range[0] = newPageNumber - 1;
             range[1] = cropJob.getSourcePageCount()
                     + (newPageNumber - origPageNumber);
-            SimpleBookmark.shiftPageNumbers(cropJob.getSourceBookmarks(),
+            SimpleBookmark.shiftPageNumbersInRange(cropJob.getSourceBookmarks(),
                     cluster.getRatiosList().size() - 1, range);
         }
         stamper.setOutlines(cropJob.getSourceBookmarks());

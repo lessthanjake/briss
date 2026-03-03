@@ -25,8 +25,8 @@ import at.laborg.briss.model.ClusterDefinition;
 import at.laborg.briss.model.PageCluster;
 import at.laborg.briss.model.PageExcludes;
 
-import com.itextpdf.text.Rectangle;
-import com.itextpdf.text.pdf.PdfReader;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfReader;
 
 public final class ClusterCreator {
     private ClusterCreator() {

@@ -76,7 +76,7 @@ import at.laborg.briss.utils.DocumentCropper;
 import at.laborg.briss.utils.PDFFileFilter;
 import at.laborg.briss.utils.PageNumberParser;
 
-import com.itextpdf.text.DocumentException;
+import com.lowagie.text.DocumentException;
 
 /**
  *
@@ -482,7 +482,13 @@ public class BrissGUI extends JFrame implements ActionListener,
                 File result = createAndExecuteCropJob(workingSet
                         .getSourceFile());
                 if (result != null) {
-                    DesktopHelper.openFileWithDesktopApp(result);
+                    int openConfirm = JOptionPane.showConfirmDialog(this,
+                            "Cropping complete. Open the cropped PDF?\n" + result.getName(),
+                            "Open Cropped PDF",
+                            JOptionPane.YES_NO_OPTION);
+                    if (openConfirm == JOptionPane.YES_OPTION) {
+                        DesktopHelper.openFileWithDesktopApp(result);
+                    }
                     lastOpenDir = result.getParentFile();
                 }
 
@@ -505,7 +511,13 @@ public class BrissGUI extends JFrame implements ActionListener,
             try {
                 setWorkingState("Creating and showing preview...");
                 File result = createAndExecuteCropJobForPreview();
-                DesktopHelper.openFileWithDesktopApp(result);
+                int openConfirm = JOptionPane.showConfirmDialog(this,
+                        "Preview ready. Open the preview PDF?\n" + result.getName(),
+                        "Open Preview",
+                        JOptionPane.YES_NO_OPTION);
+                if (openConfirm == JOptionPane.YES_OPTION) {
+                    DesktopHelper.openFileWithDesktopApp(result);
+                }
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(this, e.getMessage(),
                         "Error occured while cropping",
@@ -539,6 +551,7 @@ public class BrissGUI extends JFrame implements ActionListener,
     private File createAndExecuteCropJobForPreview() throws IOException,
             DocumentException, CropException {
         File tmpCropFileDestination = File.createTempFile("briss", ".pdf");
+        tmpCropFileDestination.deleteOnExit();
         CropDefinition cropDefinition = CropDefinition.createCropDefinition(
                 workingSet.getSourceFile(), tmpCropFileDestination,
                 workingSet.getClusterDefinition());
