@@ -19,6 +19,13 @@
 ################################################
 CHANGELOG  - BRISS
 ################################################
+* 1.0
+ * Security hardening: replaced iText 5.2.0 with OpenPDF 1.4.2 (CVE-2017-9096)
+ * Removed Bouncy Castle 1.46 (CVE-2018-1000613 and others)
+ * Added temp file cleanup (deleteOnExit + try/finally)
+ * Added auto-open confirmation dialogs
+ * Batch folder processing with automatic backup of originals
+
 * 0.9 (26.05.2012)
  * better handling of bookmarks
  * library updates

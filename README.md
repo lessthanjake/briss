@@ -32,9 +32,9 @@ sudo dnf install java-1.8.0-openjdk
 
 ## Installation
 
-1. Download `briss-0.9-dist.zip` from the [Releases page](https://github.com/lessthanjake/briss/releases)
-2. Extract the zip — you'll get a `briss-0.9/` folder containing the jar and its dependencies
-3. All commands below should be run from inside the `briss-0.9/` folder
+1. Download `briss-1.0-dist.zip` from the [Releases page](https://github.com/lessthanjake/briss/releases)
+2. Extract the zip — you'll get a `briss-1.0/` folder containing the jar and its dependencies
+3. All commands below should be run from inside the `briss-1.0/` folder
 
 ## Usage
 
@@ -42,17 +42,17 @@ sudo dnf install java-1.8.0-openjdk
 
 **Windows (Command Prompt):**
 ```
-cd briss-0.9
-java -jar briss-0.9.jar
+cd briss-1.0
+java -jar briss-1.0.jar
 ```
 
 **macOS / Linux (Terminal):**
 ```bash
-cd briss-0.9
-java -jar briss-0.9.jar
+cd briss-1.0
+java -jar briss-1.0.jar
 ```
 
-Or double-click `briss-0.9.jar` if your system has Java file associations configured.
+Or double-click `briss-1.0.jar` if your system has Java file associations configured.
 
 #### GUI Instructions
 
@@ -71,30 +71,30 @@ Or double-click `briss-0.9.jar` if your system has Java file associations config
 
 ```bash
 # Auto-crop a single PDF (output: filename_cropped.pdf)
-java -jar briss-0.9.jar -s document.pdf
+java -jar briss-1.0.jar -s document.pdf
 
 # Auto-crop with custom output name
-java -jar briss-0.9.jar -s document.pdf -d output.pdf
+java -jar briss-1.0.jar -s document.pdf -d output.pdf
 ```
 
 ### Command Line — Batch Folder
 
 ```bash
 # Process all PDFs in a folder (recursive)
-java -jar briss-0.9.jar -f /path/to/folder
+java -jar briss-1.0.jar -f /path/to/folder
 
 # Process multiple folders
-java -jar briss-0.9.jar -f /path/to/folder1 -f /path/to/folder2
+java -jar briss-1.0.jar -f /path/to/folder1 -f /path/to/folder2
 ```
 
 **Windows example:**
 ```
-java -jar briss-0.9.jar -f C:\Users\me\Documents\scans
+java -jar briss-1.0.jar -f C:\Users\me\Documents\scans
 ```
 
 **macOS / Linux example:**
 ```bash
-java -jar briss-0.9.jar -f ~/Documents/scans
+java -jar briss-1.0.jar -f ~/Documents/scans
 ```
 
 ### Batch Behavior
@@ -113,7 +113,7 @@ java -jar briss-0.9.jar -f ~/Documents/scans
 
 **Large files:** If you get memory errors, increase the heap size:
 ```bash
-java -Xms128m -Xmx1024m -jar briss-0.9.jar
+java -Xms128m -Xmx1024m -jar briss-1.0.jar
 ```
 
 **macOS Gatekeeper:** If macOS blocks the app, go to `System Preferences > Security & Privacy` and allow it.

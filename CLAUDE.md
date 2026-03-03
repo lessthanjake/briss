@@ -56,7 +56,7 @@ GitHub CLI is at `/c/tools/gh/bin/gh.exe`.
 
 ### 1. Install custom dependencies (one-time)
 
-These jars are not in Maven Central. Install them from the pre-built distribution (`~/Desktop/briss-0.9/` or from the release zip):
+These jars are not in Maven Central. Install them from the pre-built distribution (`~/Desktop/briss-1.0/` or from the release zip):
 
 ```bash
 mvn install:install-file -DgroupId=jpedal -DartifactId=jpedal -Dpackaging=jar -Dversion=4.74b27 -Dfile=jpedal-4.74b27.jar
@@ -72,16 +72,16 @@ mvn clean package
 ```
 
 Produces:
-- `target/briss-0.9.jar` — main jar (needs dependency jars on classpath)
-- `target/briss-0.9-dist.zip` — distributable zip with all jars + docs
+- `target/briss-1.0.jar` — main jar (needs dependency jars on classpath)
+- `target/briss-1.0-dist.zip` — distributable zip with all jars + docs
 
 ### 3. Testing
 
 ```bash
 # From inside the extracted dist zip:
-java -jar briss-0.9.jar                    # GUI
-java -jar briss-0.9.jar -s test.pdf        # single file
-java -jar briss-0.9.jar -f ./test-folder   # batch
+java -jar briss-1.0.jar                    # GUI
+java -jar briss-1.0.jar -s test.pdf        # single file
+java -jar briss-1.0.jar -f ./test-folder   # batch
 ```
 
 Kill any lingering java.exe before rebuilding — the old jar may be locked:
@@ -91,7 +91,7 @@ taskkill //F //IM java.exe
 
 ## Updating the GitHub Release
 
-The release is at https://github.com/lessthanjake/briss/releases/tag/v0.9 (release ID: `288889960`).
+The release is at https://github.com/lessthanjake/briss/releases/tag/v1.0 (release ID: `288889960`).
 
 The `gh release` command requires a `workflow` scope we don't have, so use the API directly:
 
@@ -115,8 +115,8 @@ curl -s -X DELETE -H "Authorization: token $TOKEN" \
 ```bash
 TOKEN=$(/c/tools/gh/bin/gh.exe auth token) && \
 curl -s -H "Authorization: token $TOKEN" -H "Content-Type: application/zip" \
-  --data-binary @target/briss-0.9-dist.zip \
-  "https://uploads.github.com/repos/lessthanjake/briss/releases/288889960/assets?name=briss-0.9-dist.zip"
+  --data-binary @target/briss-1.0-dist.zip \
+  "https://uploads.github.com/repos/lessthanjake/briss/releases/288889960/assets?name=briss-1.0-dist.zip"
 ```
 
 ### All-in-one (delete old + upload new)
@@ -127,8 +127,8 @@ ASSET_ID=$(/c/tools/gh/bin/gh.exe api repos/lessthanjake/briss/releases/28888996
 curl -s -X DELETE -H "Authorization: token $TOKEN" \
   https://api.github.com/repos/lessthanjake/briss/releases/assets/$ASSET_ID && \
 curl -s -H "Authorization: token $TOKEN" -H "Content-Type: application/zip" \
-  --data-binary @target/briss-0.9-dist.zip \
-  "https://uploads.github.com/repos/lessthanjake/briss/releases/288889960/assets?name=briss-0.9-dist.zip"
+  --data-binary @target/briss-1.0-dist.zip \
+  "https://uploads.github.com/repos/lessthanjake/briss/releases/288889960/assets?name=briss-1.0-dist.zip"
 ```
 
 ## Important Build Notes
